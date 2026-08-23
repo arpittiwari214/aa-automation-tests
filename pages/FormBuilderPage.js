@@ -25,8 +25,18 @@ class FormBuilderPage {
     this.closeButton = page.getByRole('button', { name: 'Close' });
 
     // --- Element palette (left rail, inside the designer frame) ---
-    this.textboxPaletteItem = this.canvas.getByText('TextBox', { exact: true });
-    this.selectFilePaletteItem = this.canvas.getByText('Select File', { exact: true });
+    // CONFIRMED from a live page snapshot: palette entries are BUTTONS whose
+    // accessible name starts with U+F1C1, a Private Use Area font-icon glyph
+    // (e.g. " Select File"). Any pattern anchored with ^ fails against
+    // that first character, so match on the tail of the name instead — the
+    // same gotcha as the Create menu in AutomationPage.
+    this.selectFilePaletteItem = this.canvas.getByRole('button', { name: /Select File$/ });
+
+    // The exact casing of the textbox entry is not yet confirmed ("TextBox",
+    // "Textbox" and "Text Box" are all plausible), so accept any of them.
+    this.textboxPaletteItem = this.canvas.getByRole('button', {
+      name: /Text\s*Box$/i,
+    });
 
     // --- Canvas fields ---
     // CONFIRMED via the form's own Styles tab: the builder assigns every
