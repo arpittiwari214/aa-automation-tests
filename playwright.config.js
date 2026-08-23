@@ -38,7 +38,10 @@ module.exports = defineConfig({
       testMatch: /useCase1\.spec\.js/,
       use: {
         ...devices['Desktop Chrome'],
-        headless: false,
+        // Headless by default. Set HEADED=1 to watch the run in a real window:
+        //   HEADED=1 npm run test:usecase1      (bash)
+        //   $env:HEADED=1; npm run test:usecase1  (PowerShell)
+        headless: process.env.HEADED !== '1',
         viewport: { width: 1600, height: 900 },
       },
     },

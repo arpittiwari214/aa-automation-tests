@@ -15,11 +15,27 @@ class AutomationPage {
     // CONFIRMED (codegen): left-hand nav entry.
     this.automationNavLink = page.getByRole('link', { name: 'Automation', exact: true });
 
-    // INFERRED: the "Create" dropdown in the top toolbar of the file list.
-    this.createDropdown = page.getByRole('button', { name: /^create$/i });
+    // CONFIRMED: there are TWO buttons labelled "Create" on this page:
+    //   1. the page-header dropdown, sitting next to "Manage"  <- the one we want
+    //   2. a square icon button in the "Files and folders" toolbar, next to
+    //      "Upload files…" and "Delete checked items…"
+    // Matching on the accessible name alone hits both and trips strict mode,
+    // so scope to the header that contains it.
+    this.createDropdown = page
+      .getByRole('heading', { name: /Create.*Manage/ })
+      .getByLabel('Create');
 
-    // INFERRED: the "Form" entry inside the Create dropdown.
-    this.createFormOption = page.getByRole('menuitem', { name: /^form$/i });
+    // CONFIRMED: the Create dropdown renders its entries as BUTTONS (not
+    // menuitems), and each accessible name is bracketed by two characters that
+    // are easy to miss:
+    //   - it STARTS with U+F1C1, a Private Use Area font-icon glyph, so any
+    //     pattern anchored with ^ or ^\s* fails — the first character is
+    //     neither whitespace nor a letter
+    //   - it ENDS with U+2026, a single "…" character rather than three dots
+    // The three options are " Process…", " Task Bot…" and
+    // " Form…". Matching on the tail is therefore both simplest and
+    // safest — nothing else on the page ends in "Form…".
+    this.createFormOption = page.getByRole('button', { name: /Form…$/ });
 
     // --- "Create form" dialog ---
     // INFERRED from the live dialog: a "Form name" field, an optional
