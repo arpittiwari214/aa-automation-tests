@@ -1,0 +1,7 @@
+# Keep line endings consistent for source, and stop Git from "fixing" the
+# sample PDF — a mostly-ASCII PDF gets misdetected as text, and CRLF
+# translation corrupts its byte offsets.
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.pdf  binary

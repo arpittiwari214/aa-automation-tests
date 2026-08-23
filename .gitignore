@@ -1,0 +1,10 @@
+node_modules/
+.env
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Playwright codegen recordings are never committed — they capture whatever
+# you typed while recording, including the password.
+codegen-*.js
+recording*.js

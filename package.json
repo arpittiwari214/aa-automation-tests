@@ -1,0 +1,17 @@
+{
+  "name": "aa-automation-tests",
+  "version": "1.0.0",
+  "description": "Playwright automation suite for the Automation Anywhere Community Edition assignment (UI + API)",
+  "scripts": {
+    "test": "playwright test",
+    "test:usecase1": "playwright test --project=usecase1-ui",
+    "test:usecase2": "playwright test --project=usecase2-api",
+    "test:headed": "playwright test --project=usecase1-ui --headed",
+    "codegen": "playwright codegen https://community.cloud.automationanywhere.digital",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "dotenv": "^16.4.5"
+  }
+}
