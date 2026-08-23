@@ -121,12 +121,17 @@ link is unresponsive to a real mouse click.
 (reasonable, not yet exercised against a real run). Re-record with
 `npm run codegen` to promote an inferred locator.
 
-**Some API endpoints need confirming.** `api/endpoints.js` marks each route
-`[VERIFIED]` or `[CAPTURE]`. `/v1/authentication` is stable and documented;
-the `/v2/repository/...` routes vary between Community Edition and Enterprise
-and should be confirmed against a Network-tab capture of your own account.
-`docs/capturing-api-calls.md` explains how. Confirming them is step one of the
-assignment's own Use Case 2 instructions, so it is expected work, not a gap.
+**Every API endpoint needs confirming from a capture.** An unauthenticated
+probe of this host showed the gateway answers 401 for any unmatched path —
+including deliberately nonsense ones — so a 401 cannot be read as proof that a
+route exists. Paths cannot be validated from the outside, which is precisely
+why the assignment says to read them off the Network tab.
+
+Start with authentication: it was the one path returning 404 rather than the
+blanket 401, so `/v1/authentication` is probably not the Community Edition
+route despite being the commonly cited one. Nothing else in the suite can run
+until that call resolves. `docs/capturing-api-calls.md` walks through the
+capture.
 
 **Tests run serially, single worker.** Community Edition permits one active
 session per user, so parallel workers would evict each other's login. Within
