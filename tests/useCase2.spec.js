@@ -65,9 +65,15 @@ test.describe('Use Case 2 — Create a Process with a Form via API', () => {
     expect(Array.isArray(body.list)).toBeTruthy();
     expect(body.list.length).toBeGreaterThan(0);
 
-    // Any file's parentId is the private workspace root we need to create in.
-    privateFolderId = body.list[0].parentId ?? body.list[0].id;
+    // Taking any file's parentId yields the workspace ROOT, which is not
+    // writable — creating there returns 400 repository.exception.root.folder
+    // ("Can not create under root folder"). Resolve a real subfolder instead.
+    privateFolderId = await client.getWritableFolderId();
     expect(privateFolderId).toBeTruthy();
+    expect(String(privateFolderId)).toMatch(/^\d+$/);
+
+    // And it must not be the root we were just handed.
+    expect(String(privateFolderId)).not.toBe(String(client.rootFolderId));
   });
 
   test('Step 3 — creates a Form file and gets back a valid id', async () => {

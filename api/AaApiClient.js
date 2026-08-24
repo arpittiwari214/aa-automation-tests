@@ -63,12 +63,64 @@ class AaApiClient {
     return this.request.post(E.listPrivateFiles, {
       headers: this.authHeaders,
       data: {
-        // A single page is enough — we only need one record to read its
-        // parentId, which is the private workspace root.
-        page: { offset: 0, length: 1 },
+        // Ask for a full page rather than a single record: the listing is how
+        // the workspace's folders are discovered, and one record is whatever
+        // happens to sort first.
+        page: { offset: 0, length: 50 },
         sort: [{ field: 'name', direction: 'asc' }],
       },
     });
+  }
+
+  /** Lists the entries inside a folder. */
+  async listFolder(folderId) {
+    return this.request.post(E.listFolder(folderId), {
+      headers: this.authHeaders,
+      data: {
+        page: { offset: 0, length: 50 },
+        sort: [{ field: 'name', direction: 'asc' }],
+      },
+    });
+  }
+
+  /**
+   * Step 2 — resolve a folder that files can actually be created in.
+   *
+   * The private workspace ROOT is not writable. Posting to it returns
+   *   400 { code: "repository.exception.root.folder",
+   *         message: "Can not create under root folder" }
+   *
+   * Note it is NOT enough to take a file's parentId and treat it as the root:
+   * that yields whichever folder that particular file happens to live in, so
+   * the answer changes as soon as anything is created in a subfolder.
+   *
+   * The workspace listing already includes folder entries (folder === true),
+   * so pick from those directly. Prefer "Bots", where the control room puts
+   * automations, and fall back to any other folder.
+   *
+   * @returns {Promise<string>} id of a writable folder
+   */
+  async getWritableFolderId() {
+    const listed = await this.listPrivateFiles();
+    if (!listed.ok()) {
+      throw new Error(`Could not list private workspace: ${listed.status()}`);
+    }
+
+    const entries = (await listed.json()).list || [];
+    const folders = entries.filter((e) => e.folder);
+    const target = folders.find((f) => /^bots$/i.test(f.name)) || folders[0];
+
+    if (!target) {
+      throw new Error(
+        `No folder found in the private workspace to create files in. ` +
+          `Listing returned ${entries.length} entries, none of them folders.`
+      );
+    }
+
+    // The chosen folder's own parent is the (non-writable) workspace root.
+    this.rootFolderId = target.parentId;
+    this.workingFolderName = target.name;
+    return target.id;
   }
 
   /**
@@ -77,14 +129,20 @@ class AaApiClient {
    * @param {string} name             file name, must be unique in the folder
    * @param {string} contentType      E.contentTypes.form or .workflow
    */
-  async createFile(folderId, name, contentType) {
-    return this.request.post(E.createFileInFolder(folderId), {
+  async createFile(folderId, name, contentType, description = 'Created by automated API test') {
+    // CONFIRMED shape (scripts/capture-repo-calls.js): the destination folder
+    // travels in the body as parentFolderId, not in the URL.
+    return this.request.post(E.createFile, {
       headers: this.authHeaders,
-      data: { name, type: contentType, contentType },
+      data: { name, parentFolderId: String(folderId), description, contentType },
     });
   }
 
-  /** Steps 4 and 7 — write the form / workflow body onto an existing file. */
+  /**
+   * Steps 4 and 7 — write the form / workflow body onto an existing file.
+   * @param {string|number} fileId
+   * @param {object} content  e.g. { form: {...} } for a form file
+   */
   async saveContent(fileId, content) {
     return this.request.put(E.saveFileContent(fileId), {
       headers: this.authHeaders,
@@ -94,14 +152,13 @@ class AaApiClient {
 
   /**
    * Steps 5 and 8 — register this file's dependencies.
+   * CONFIRMED shape: a flat array of ids under childFileIds.
    * @param {Array<string|number>} dependencyFileIds files this one relies on
    */
   async saveDependencies(fileId, dependencyFileIds = []) {
-    return this.request.post(E.saveFileDependencies(fileId), {
+    return this.request.put(E.saveFileDependencies(fileId), {
       headers: this.authHeaders,
-      data: {
-        dependencies: dependencyFileIds.map((id) => ({ fileId: id })),
-      },
+      data: { childFileIds: dependencyFileIds.map(String) },
     });
   }
 }

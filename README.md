@@ -110,28 +110,59 @@ control underneath. `waitForCanvasReady()` waits for it to clear. This is the
 usual explanation for "clicking *browse* does nothing" — including when
 clicking by hand.
 
-**File upload has two strategies.** `uploadFile()` first clicks *browse* and
-intercepts the native file chooser. If no chooser fires within 8 seconds it
-falls back to setting files directly on the hidden `<input type="file">`.
-The fallback is what lets the test pass even on accounts where the *browse*
-link is unresponsive to a real mouse click.
+**The file upload cannot be exercised in the form editor — this is a property
+of the application, not a gap in the tests.** It was established directly, with
+`scripts/debug-preview.js`:
 
-**Selectors carry confidence markers.** Locators are commented `CONFIRMED`
-(captured from a live codegen recording or DevTools inspection) or `INFERRED`
-(reasonable, not yet exercised against a real run). Re-record with
-`npm run codegen` to promote an inferred locator.
+- the builder canvas mounts no `<input type="file">` at all, and clicking
+  *browse* fires no `filechooser` event
+- Preview does not render a live form either. It displays a static JPEG
+  (`<img class="form-preview__background">`) inside an `aria-modal` dialog,
+  and that image intercepts every pointer event
 
-**Every API endpoint needs confirming from a capture.** An unauthenticated
-probe of this host showed the gateway answers 401 for any unmatched path —
-including deliberately nonsense ones — so a 401 cannot be read as proof that a
-route exists. Paths cannot be validated from the outside, which is precisely
-why the assignment says to read them off the Network tab.
+So neither surface can accept a file, which is also the real reason clicking
+*browse* by hand does nothing. The control only becomes operable when the form
+is **run** by a bot or process, where the runtime mounts a real input.
 
-Start with authentication: it was the one path returning 404 rather than the
-blanket 401, so `/v1/authentication` is probably not the Community Edition
-route despite being the commonly cited one. Nothing else in the suite can run
-until that call resolves. `docs/capturing-api-calls.md` walks through the
-capture.
+`Step 7b` therefore **skips**, with that reason recorded in the report, rather
+than asserting something hollow that would read as a verified upload. The
+`uploadFile()` method is kept because it is correct for the runtime context.
+Everything else about the control *is* asserted: that it renders, that its
+properties panel works, and that its configuration survives a save and reload.
+
+**Toolbar buttons live inside the iframe, in lowercase.** Preview, Save and
+Cancel are `"preview"`, `"save"`, `"cancel"` inside the designer frame — not
+`"Save"` on the host page. And Save is never given the `disabled` attribute:
+it flips `data-input-status` from `INTERACTIVE` to `DISABLED`, so
+`toBeDisabled()` never matches and the attribute must be asserted instead.
+
+**API endpoints were captured, not guessed.** The gateway answers 401 for any
+unmatched path — including deliberately nonsense ones — so a 401 is not proof
+a route exists and paths cannot be validated from the outside. They were
+recorded from the control room's own traffic instead:
+
+```bash
+node scripts/capture-auth.js        # the login call
+node scripts/capture-repo-calls.js  # create / content / dependency calls
+```
+
+What that turned up, all now confirmed:
+
+| Call | Route |
+| --- | --- |
+| Authenticate | `POST /v2/authentication` → `{ token, user, ... }` |
+| List workspace | `POST /v2/repository/workspaces/private/files/list` |
+| Create file | `POST /v2/repository/files` — folder is `parentFolderId` in the **body** |
+| Save content | `PUT /v2/repository/files/{id}/content?hasErrors=false` |
+| Save dependencies | `PUT /v2/repository/files/{id}/dependencies`, body `{ childFileIds }` |
+
+Two things cost real time and are worth knowing. `/v1/authentication` — the
+commonly cited route — returns **404** here; Community Edition is on **v2**.
+And the workspace **root folder is not writable**: creating there returns
+`400 repository.exception.root.folder`, so `getWritableFolderId()` picks a real
+subfolder (*Bots*) out of the listing. It deliberately does not derive the root
+from a file's `parentId`, because that changes the moment anything is created
+in a subfolder.
 
 **Tests run serially, single worker.** Community Edition permits one active
 session per user, so parallel workers would evict each other's login. Within
