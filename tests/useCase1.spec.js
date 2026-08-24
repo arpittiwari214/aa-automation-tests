@@ -166,8 +166,15 @@ test.describe('Use Case 1 — Form with Upload Flow (UI Automation)', () => {
     expect(saveResponse.ok()).toBeTruthy();
     expect(saveResponse.status()).toBeLessThan(400);
 
-    // The builder disables Save once there is nothing left to persist.
-    await expect(formPage.saveButton).toBeDisabled({ timeout: 20 * 1000 });
+    // The builder greys out Save once there is nothing left to persist, but it
+    // never sets the disabled attribute — it flips data-input-status from
+    // INTERACTIVE to DISABLED and swaps a CSS class. toBeDisabled() inspects
+    // the real disabled/aria-disabled state, so it reports the button as
+    // enabled throughout and never matches. Assert the attribute the app
+    // actually drives.
+    await expect(formPage.saveButton).toHaveAttribute('data-input-status', 'DISABLED', {
+      timeout: 20 * 1000,
+    });
   });
 
   test('Step 8b — the saved form definition survives a reload', async () => {
