@@ -19,10 +19,13 @@ class FormBuilderPage {
   constructor(page) {
     this.page = page;
 
-    // --- Top toolbar (outside the iframe) ---
-    this.saveButton = page.getByRole('button', { name: 'Save' });
-    this.previewButton = page.getByRole('button', { name: 'Preview' });
-    this.closeButton = page.getByRole('button', { name: 'Close' });
+    // --- Editor toolbar ---
+    // CONFIRMED: these live INSIDE the designer frame, not on the host page,
+    // and their accessible names are lowercase ("preview", "save", "cancel").
+    // A page-level getByRole('button', { name: 'Preview' }) times out.
+    this.saveButton = this.canvas.getByRole('button', { name: 'save' });
+    this.previewButton = this.canvas.getByRole('button', { name: 'preview' });
+    this.cancelButton = this.canvas.getByRole('button', { name: 'cancel' });
 
     // --- Element palette (left rail, inside the designer frame) ---
     // CONFIRMED from a live page snapshot: palette entries are BUTTONS whose
@@ -52,12 +55,23 @@ class FormBuilderPage {
     this.hiddenFileInput = this.fileField.locator('input[type="file"]');
 
     // --- Right-hand properties panel (inside the designer frame) ---
-    this.propertiesPanel = this.canvas.getByText(/^Properties/);
+    // CONFIRMED: two things match /^Properties/ — the tab button itself
+    // (always present) and the panel heading, which reads "Properties - Form"
+    // with no selection and "Properties - Text Box" / "Properties - Select
+    // File" once a field is selected. Only the heading proves a field is
+    // actually selected, so require the " - " that only the heading has.
+    this.propertiesPanel = this.canvas.getByText(/^Properties\s*-\s*\S/);
+    // CONFIRMED: these two carry proper accessible names.
     this.elementIdInput = this.canvas.getByRole('textbox', { name: /element id/i });
     this.elementLabelInput = this.canvas.getByRole('textbox', { name: /element label/i });
-    this.fileFormatsInput = this.canvas.getByRole('textbox', {
-      name: /file formats/i,
-    });
+
+    // CONFIRMED by dumping every field in the panel (scripts/debug-panel.js):
+    // the allowed-formats control is a <textarea name="fileFormat"> with no
+    // accessible name and no placeholder — the panel renders "Enter file
+    // formats separated by commas" as a plain text node that is not tied to it
+    // by label or aria-label, so getByRole({ name }) can never match it.
+    // The form-control name is the one stable hook it does expose.
+    this.fileFormatsInput = this.canvas.locator('textarea[name="fileFormat"]');
   }
 
   /**
@@ -66,7 +80,12 @@ class FormBuilderPage {
    * form reloads, and a cached handle would go stale.
    */
   get canvas() {
-    return this.page.locator('iframe').first().contentFrame();
+    // Target the designer frame by its src rather than taking the first
+    // iframe on the page. The control room also embeds a third-party
+    // fluidtopics.net help widget in its own iframe, so "first" is decided by
+    // DOM order and would silently start resolving to the wrong document if
+    // that widget ever moved ahead of the designer.
+    return this.page.locator('iframe[src*="modules/attended"]').contentFrame();
   }
 
   async gotoFormEditor(formUrl) {
@@ -137,9 +156,28 @@ class FormBuilderPage {
     await this.fileField.first().waitFor({ state: 'visible' });
   }
 
-  /** Clicks a canvas field so its properties load in the right-hand panel. */
-  async selectField(fieldLocator) {
+  /**
+   * Clicks a canvas field so its properties load in the right-hand panel.
+   *
+   * @param fieldLocator       the canvas field to select
+   * @param expectedPanelName  the field type the panel heading should name,
+   *                           e.g. "Text Box" or "Select File". Passing it
+   *                           turns this into a real check: with nothing
+   *                           selected the heading reads "Properties - Form",
+   *                           which would otherwise satisfy a looser wait and
+   *                           let a failed click slip through.
+   */
+  async selectField(fieldLocator, expectedPanelName) {
     await fieldLocator.click();
+
+    if (expectedPanelName) {
+      const heading = this.canvas.getByText(
+        new RegExp(`^Properties\\s*-\\s*${expectedPanelName}`, 'i')
+      );
+      await heading.waitFor({ state: 'visible' });
+      return;
+    }
+
     await this.propertiesPanel.waitFor({ state: 'visible' });
   }
 
@@ -152,22 +190,36 @@ class FormBuilderPage {
    * An empty format list is one reason the control can reject every file.
    */
   async setAllowedFileFormats(formats = 'pdf,png,jpg,docx') {
-    await this.selectField(this.fileField);
+    await this.selectField(this.fileField.first(), 'Select File');
     await this.fileFormatsInput.fill(formats);
     // Blur so the builder commits the value.
     await this.canvas.locator('body').click({ position: { x: 5, y: 5 } });
   }
 
   /**
-   * Uploads a file to the Select File control.
+   * Attempts to upload a file to the Select File control.
    *
-   * Two strategies, because the control behaves differently depending on
-   * whether the builder has injected its real <input type="file"> yet:
-   *   1. Click "browse" and intercept the native file chooser.
-   *   2. If no chooser appears, set files straight onto the hidden input.
+   * IMPORTANT — the control is INERT inside the form editor. This was
+   * established by direct investigation (scripts/debug-preview.js), not by
+   * inference:
    *
-   * Strategy 2 is what makes this work even when a human clicking "browse"
-   * gets nothing — Playwright can populate an input the UI never opened.
+   *   - the builder canvas contains no <input type="file"> at all, and
+   *     clicking "browse" fires no filechooser event
+   *   - Preview does not render a live form either: it displays a static
+   *     JPEG (<img class="form-preview__background">) inside an
+   *     aria-modal dialog, and that image intercepts every pointer event
+   *
+   * So neither surface can accept a file. This is also the real reason
+   * clicking "browse" by hand appears to do nothing — it is not a selector
+   * problem and not a broken browser. The control only becomes functional
+   * when the form is RUN by a task bot or process, where the runtime mounts
+   * a real file input.
+   *
+   * The method is kept because it is correct for that runtime context. It
+   * returns the strategy that worked, or throws a clear explanation rather
+   * than a bare timeout.
+   *
+   * @returns {Promise<'filechooser'|'hidden-input'>}
    */
   async uploadFile(filePath) {
     await this.waitForCanvasReady();
@@ -179,11 +231,29 @@ class FormBuilderPage {
       await fileChooser.setFiles(filePath);
       return 'filechooser';
     } catch {
-      // No native dialog fired. Fall back to the underlying input.
-      // `setInputFiles` works on inputs that are hidden or zero-sized.
-      await this.hiddenFileInput.setInputFiles(filePath);
-      return 'hidden-input';
+      // No native dialog. Fall back to an input the UI never opened —
+      // setInputFiles works on hidden or zero-sized inputs.
+      if ((await this.hiddenFileInput.count()) > 0) {
+        await this.hiddenFileInput.setInputFiles(filePath);
+        return 'hidden-input';
+      }
+
+      throw new Error(
+        'The Select File control exposes no file input in the form editor, and ' +
+          'clicking "browse" fires no file chooser. This is expected: the editor ' +
+          'renders a design-time preview of the control, and Preview mode is a ' +
+          'static screenshot. Upload is only possible when the form is run by a ' +
+          'bot/process. See scripts/debug-preview.js for the evidence.'
+      );
     }
+  }
+
+  /**
+   * Whether the Select File control is actually operable on the current
+   * surface — true only when a real file input is mounted.
+   */
+  async isFileUploadOperable() {
+    return (await this.hiddenFileInput.count()) > 0;
   }
 
   /** Resolves to the filename text the control displays once a file is attached. */

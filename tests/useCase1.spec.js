@@ -91,22 +91,27 @@ test.describe('Use Case 1 — Form with Upload Flow (UI Automation)', () => {
     // Assignment expectation: "UI element visibility and functionality".
     await expect(formPage.textboxInput).toBeEditable();
     await expect(formPage.fileUploadArea).toBeVisible();
-    await expect(formPage.fileUploadArea).toContainText(/drop file here or browse/i);
+    // The control renders "Drop file here or  browse" with two spaces before
+    // the link, so match on flexible whitespace rather than a literal space.
+    await expect(formPage.fileUploadArea).toContainText(/drop file here or\s+browse/i);
   });
 
   test('Step 6 — opens each element and verifies its properties panel', async () => {
-    await formPage.selectField(formPage.textboxField.first());
-    await expect(formPage.propertiesPanel).toBeVisible();
-    await expect(formPage.elementIdInput).toHaveValue(/TextBox\d+/);
+    // The panel heading names the selected field type, so asserting on it
+    // proves the click actually landed on the intended element.
+    await formPage.selectField(formPage.textboxField.first(), 'Text Box');
+    await expect(formPage.elementIdInput).toHaveValue(/Text\s*Box\d+/i);
 
-    await formPage.selectField(formPage.fileField.first());
-    await expect(formPage.propertiesPanel).toBeVisible();
-    await expect(formPage.elementIdInput).toHaveValue(/File\d+/);
+    await formPage.selectField(formPage.fileField.first(), 'Select File');
+    await expect(formPage.elementIdInput).toHaveValue(/File\d+/i);
 
     // An empty format allowlist makes the control reject every file, so set it
     // explicitly rather than relying on the builder's default.
     await formPage.setAllowedFileFormats('pdf,png,jpg,docx');
-    await expect(formPage.fileFormatsInput).toHaveValue('pdf,png,jpg,docx');
+    // The builder normalises the list on blur, rewriting "a,b" as "a, b", so
+    // assert on the entries with flexible separators rather than the exact
+    // string that was typed in.
+    await expect(formPage.fileFormatsInput).toHaveValue(/pdf,\s*png,\s*jpg,\s*docx/);
   });
 
   test('Step 7a — accepts and retains text in the textbox', async () => {
@@ -115,12 +120,30 @@ test.describe('Use Case 1 — Form with Upload Flow (UI Automation)', () => {
   });
 
   test('Step 7b — uploads a document and shows the filename as confirmation', async () => {
+    // The Select File control is inert inside the form editor. Verified
+    // directly, not assumed (scripts/debug-preview.js):
+    //   - the builder canvas mounts no <input type="file">, and clicking
+    //     "browse" fires no filechooser event
+    //   - Preview is not a live form: it is a static JPEG
+    //     (<img class="form-preview__background">) inside an aria-modal
+    //     dialog, and that image intercepts all pointer events
+    // It only becomes operable when the form is run by a bot or process.
+    //
+    // Skipping with this reason is deliberate: the report then shows the step
+    // as explicitly not-run with the cause, rather than passing on a hollow
+    // assertion that would imply an upload was verified when none occurred.
+    const operable = await formPage.isFileUploadOperable();
+    test.skip(
+      !operable,
+      'Select File is inert in the form editor (no file input on the canvas; ' +
+        'Preview is a static screenshot). Upload can only be exercised when the ' +
+        'form is run by a bot/process. Evidence: scripts/debug-preview.js.'
+    );
+
     const strategy = await formPage.uploadFile(SAMPLE_FILE);
     test.info().annotations.push({ type: 'upload-strategy', description: strategy });
 
     // Assignment expectation: "File upload status and confirmation".
-    // The control renders the attached filename in place of the drop prompt —
-    // that rendered name is the confirmation being asserted here.
     await expect(formPage.uploadedFileName('sample-upload.pdf')).toBeVisible({
       timeout: 20 * 1000,
     });
@@ -147,13 +170,19 @@ test.describe('Use Case 1 — Form with Upload Flow (UI Automation)', () => {
     await expect(formPage.saveButton).toBeDisabled({ timeout: 20 * 1000 });
   });
 
-  test('Step 8b — the uploaded document survives a reload', async () => {
+  test('Step 8b — the saved form definition survives a reload', async () => {
+    // What persists across a reload is the form DEFINITION — the fields that
+    // were placed and configured — since the editor saves a design, not a
+    // filled-in submission. Asserting the fields and their configuration come
+    // back is the real check that the save reached the backend and stuck.
     await page.reload();
     await formPage.waitForCanvasReady();
 
-    await expect(formPage.textboxInput).toHaveValue(SAMPLE_TEXT);
-    await expect(formPage.uploadedFileName('sample-upload.pdf')).toBeVisible({
-      timeout: 20 * 1000,
-    });
+    await expect(formPage.textboxField.first()).toBeVisible();
+    await expect(formPage.fileField.first()).toBeVisible();
+
+    // The allowed-formats value set in Step 6 must have persisted too.
+    await formPage.selectField(formPage.fileField.first(), 'Select File');
+    await expect(formPage.fileFormatsInput).toHaveValue(/pdf,\s*png,\s*jpg,\s*docx/);
   });
 });
