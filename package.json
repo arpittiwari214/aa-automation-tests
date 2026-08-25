@@ -8,7 +8,8 @@
     "test:usecase2": "playwright test --project=usecase2-api",
     "test:headed": "playwright test --project=usecase1-ui --headed",
     "codegen": "playwright codegen https://community.cloud.automationanywhere.digital",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "guide:pdf": "node scripts/render-guide-pdf.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0",

@@ -1,0 +1,1069 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Automation Anywhere Testbench — Project Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root {
+    --ground:      #FFFFFF;
+    --surface:     #F7F9F8;
+    --ink:         #131C1A;
+    --muted:       #55635F;
+    --line:        #D3DAD8;
+    --accent:      #0F766E;
+    --accent-soft: #E4F0EE;
+    --pass:        #15803D;
+    --skip:        #B45309;
+    --code-bg:     #12201E;
+    --code-ink:    #DCE7E4;
+
+    --display: 'Archivo', Arial, sans-serif;
+    --body:    'Source Serif 4', Georgia, serif;
+    --mono:    'JetBrains Mono', Consolas, monospace;
+  }
+
+  @page { size: A4; margin: 18mm 16mm 20mm; }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 10.5pt;
+    line-height: 1.55;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  h1, h2, h3, h4 { font-family: var(--display); line-height: 1.15; margin: 0; }
+  p { margin: 0; }
+
+  .stack   { display: flex; flex-direction: column; gap: .55rem; }
+  .stack-m { display: flex; flex-direction: column; gap: 1rem; }
+
+  /* ---------- cover ---------- */
+  .cover {
+    height: 245mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    break-after: page;
+  }
+  .cover__top { display: flex; flex-direction: column; gap: 1.1rem; }
+  .cover__rule { height: 5px; width: 74px; background: var(--accent); border-radius: 3px; }
+  .cover h1 {
+    font-size: 40pt;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    max-width: 15ch;
+  }
+  .cover__sub { font-size: 13pt; color: var(--muted); max-width: 52ch; }
+  .cover__eyebrow {
+    font-family: var(--mono);
+    font-size: 8pt;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .cover__score {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .cover__cell { padding: .8rem 1rem; border-right: 1px solid var(--line); }
+  .cover__cell:last-child { border-right: 0; }
+  .cover__n {
+    font-family: var(--display);
+    font-size: 20pt;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    display: block;
+  }
+  .cover__l {
+    font-family: var(--mono);
+    font-size: 7pt;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .cover__meta { font-size: 9.5pt; color: var(--muted); display: flex; flex-direction: column; gap: .2rem; }
+
+  /* ---------- contents ---------- */
+  .toc { break-after: page; }
+  .toc ol { list-style: none; padding: 0; margin: 1rem 0 0; counter-reset: s; }
+  .toc li {
+    counter-increment: s;
+    display: grid;
+    grid-template-columns: 2.2rem 1fr;
+    gap: .6rem;
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .toc li::before {
+    content: counter(s, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 8.5pt;
+    color: var(--accent);
+    font-weight: 700;
+    padding-top: .18rem;
+  }
+  .toc__t { font-family: var(--display); font-weight: 600; font-size: 11pt; }
+  .toc__d { font-size: 9.5pt; color: var(--muted); }
+
+  /* ---------- sections ---------- */
+  section.chapter { break-before: page; }
+  .chapter > .chapter__head { margin-bottom: 1.1rem; }
+  .chapter__no {
+    font-family: var(--mono);
+    font-size: 8pt;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .chapter h2 {
+    font-size: 21pt;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-top: .3rem;
+  }
+  .chapter h3 {
+    font-size: 12pt;
+    font-weight: 700;
+    margin-top: 1.3rem;
+    margin-bottom: .45rem;
+  }
+  .chapter h4 {
+    font-family: var(--mono);
+    font-size: 8pt;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 1rem;
+    margin-bottom: .35rem;
+  }
+
+  /* Headings always travel with the content beneath them. */
+  .chapter h3, .chapter h4, .cmd-what { break-after: avoid; }
+
+  .lede { font-size: 11.5pt; color: var(--muted); max-width: 62ch; }
+
+  /* plain / technical blocks */
+  .plain, .technical {
+    border-left: 3px solid var(--accent);
+    padding: .1rem 0 .1rem .85rem;
+    margin: .7rem 0;
+  }
+  .technical { border-left-color: var(--line); }
+  .tag {
+    font-family: var(--mono);
+    font-size: 7.5pt;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: .25rem;
+  }
+  .technical .tag { color: var(--muted); }
+
+  /* ---------- code ---------- */
+  .cmd {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    font-family: var(--mono);
+    font-size: 8.5pt;
+    line-height: 1.6;
+    padding: .6rem .8rem;
+    border-radius: 6px;
+    margin: .45rem 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    break-inside: avoid;
+  }
+  .cmd .p { color: #6E8C87; }
+  .cmd-what {
+    font-family: var(--mono);
+    font-size: 7.5pt;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: .8rem;
+  }
+  code {
+    font-family: var(--mono);
+    font-size: .87em;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: .05em .3em;
+    border-radius: 3px;
+  }
+
+  /* ---------- tables ---------- */
+  /* Tables may split across pages — forbidding it strands long tables on the
+     next page and leaves the previous one half empty. Rows stay intact. */
+  table { width: 100%; border-collapse: collapse; margin: .6rem 0; font-size: 9.5pt; }
+  tr { break-inside: avoid; }
+  thead { display: table-header-group; }
+  th, td { text-align: left; padding: .42rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th {
+    font-family: var(--mono);
+    font-size: 7.5pt;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1.5px solid var(--line);
+  }
+  td.mono, th.mono { font-family: var(--mono); font-size: 8.5pt; }
+  .yes { color: var(--pass); font-family: var(--mono); font-size: 8pt; font-weight: 700; white-space: nowrap; }
+  .no  { color: var(--skip); font-family: var(--mono); font-size: 8pt; font-weight: 700; white-space: nowrap; }
+
+  /* ---------- callout ---------- */
+  .note {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--skip);
+    border-radius: 0 6px 6px 0;
+    padding: .75rem .9rem;
+    margin: .8rem 0;
+    break-inside: avoid;
+  }
+  .note--accent { border-left-color: var(--accent); }
+  .note__l {
+    font-family: var(--mono);
+    font-size: 7.5pt;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: .3rem;
+  }
+
+  /* ---------- test rows ---------- */
+  .trow { display: grid; grid-template-columns: 1fr auto; gap: .8rem; padding: .32rem 0; border-bottom: 1px solid var(--line); font-size: 9.5pt; break-inside: avoid; }
+  .trow span:last-child { font-family: var(--mono); font-size: 7.5pt; font-weight: 700; }
+  .st-pass { color: var(--pass); }
+  .st-skip { color: var(--skip); }
+
+  /* ---------- finding ---------- */
+  /* A finding is too tall to guarantee a fit; let it flow, but never leave its
+     heading stranded at the foot of a page. */
+  .finding { margin-bottom: 1.5rem; }
+  .finding__h { display: flex; gap: .7rem; align-items: baseline; margin-bottom: .4rem; break-after: avoid; }
+  .finding__n { font-family: var(--mono); font-size: 9pt; font-weight: 700; color: var(--accent); }
+  .finding__t { font-family: var(--display); font-size: 12.5pt; font-weight: 700; }
+
+  .tree {
+    font-family: var(--mono);
+    font-size: 8.5pt;
+    line-height: 1.65;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: .7rem .9rem;
+    white-space: pre;
+    overflow-x: auto;
+    margin: .5rem 0;
+  }
+
+  .glossary dt { font-family: var(--display); font-weight: 700; font-size: 10pt; margin-top: .7rem; }
+  .glossary dd { margin: .15rem 0 0; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="cover">
+  <div class="cover__top">
+    <div class="cover__rule"></div>
+    <p class="cover__eyebrow">Project Guide · Playwright · UI + API Automation</p>
+    <h1>Automation Anywhere Testbench</h1>
+    <p class="cover__sub">
+      An automated test suite for Automation Anywhere Community Edition — what it
+      does, why it exists, how to run it, and the four hidden problems that were
+      blocking every test in it.
+    </p>
+  </div>
+
+  <div class="stack-m">
+    <div class="cover__score">
+      <div class="cover__cell"><span class="cover__n" style="color:#15803D">15</span><span class="cover__l">Passed</span></div>
+      <div class="cover__cell"><span class="cover__n" style="color:#B45309">1</span><span class="cover__l">Skipped</span></div>
+      <div class="cover__cell"><span class="cover__n" style="color:#55635F">0</span><span class="cover__l">Failed</span></div>
+      <div class="cover__cell"><span class="cover__n">2</span><span class="cover__l">Use cases</span></div>
+    </div>
+
+    <div class="cover__meta">
+      <span>Framework — Playwright (JavaScript), Page Object Model</span>
+      <span>Repository — github.com/arpittiwari214/aa-automation-tests</span>
+      <span>Results from a real run against the live Control Room</span>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CONTENTS ================= -->
+<div class="toc">
+  <p class="chapter__no">Contents</p>
+  <h2 style="font-family:var(--display);font-size:21pt;font-weight:700;margin-top:.3rem">What's in this guide</h2>
+  <ol>
+    <li><span><span class="toc__t">What this project is</span><br><span class="toc__d">The assignment, in plain words and in technical terms</span></span></li>
+    <li><span><span class="toc__t">Aim and objectives</span><br><span class="toc__d">Why automate a test at all, and what Page Object Model means</span></span></li>
+    <li><span><span class="toc__t">How it is built</span><br><span class="toc__d">Folder by folder, and how a test actually executes</span></span></li>
+    <li><span><span class="toc__t">Running it</span><br><span class="toc__d">Every command, for this laptop and a fresh one</span></span></li>
+    <li><span><span class="toc__t">The sixteen tests</span><br><span class="toc__d">Each test and what it proves</span></span></li>
+    <li><span><span class="toc__t">What was actually wrong</span><br><span class="toc__d">Four invisible problems and the evidence for each</span></span></li>
+    <li><span><span class="toc__t">The skipped test</span><br><span class="toc__d">Why one test is honestly skipped rather than faked green</span></span></li>
+    <li><span><span class="toc__t">API reference</span><br><span class="toc__d">Every endpoint, captured from real traffic</span></span></li>
+    <li><span><span class="toc__t">Troubleshooting</span><br><span class="toc__d">Every error encountered, and its fix</span></span></li>
+    <li><span><span class="toc__t">Assignment audit</span><br><span class="toc__d">The brief, line by line</span></span></li>
+    <li><span><span class="toc__t">Glossary</span><br><span class="toc__d">Jargon, translated</span></span></li>
+  </ol>
+</div>
+
+<!-- ================= 1 ================= -->
+<section class="chapter">
+  <div class="chapter__head">
+    <p class="chapter__no">Chapter 01</p>
+    <h2>What this project is</h2>
+  </div>
+
+  <p class="lede">
+    A robot that tests a robot-builder — written twice over, once through a
+    browser and once straight to the server.
+  </p>
+
+  <div class="plain">
+    <span class="tag">In plain words</span>
+    <p>
+      Automation Anywhere is a website where companies build small programs that
+      do repetitive office work. The industry calls this RPA — robotic process
+      automation.
+    </p>
+    <p style="margin-top:.5rem">
+      The assignment was to check that this website works properly, but without a
+      human clicking through it. So we wrote code that opens a browser, logs in,
+      drags things around, fills in fields, clicks Save, and then checks that each
+      of those things actually happened. If something breaks, the code says exactly
+      which step broke. Then we did the same job a second way, by talking to the
+      server directly with no browser at all.
+    </p>
+  </div>
+
+  <div class="technical">
+    <span class="tag">Technically</span>
+    <p>
+      A Playwright test suite exercising Automation Anywhere Community Edition
+      across two surfaces: a browser-driven UI suite following the Page Object
+      Model, and an HTTP suite driving the Control Room REST API through an API
+      client object. Both assert on observable outcomes rather than incidental UI
+      state — the save test asserts on the actual HTTP response returned by the
+      save call, not merely that a toast appeared.
+    </p>
+  </div>
+
+  <h3>The two halves</h3>
+
+  <table>
+    <thead>
+      <tr><th style="width:26%">Suite</th><th>What it does</th><th class="mono" style="width:16%">Runtime</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Use Case 1</strong><br><span style="color:var(--muted);font-size:9pt">Browser · 8 tests</span></td>
+        <td>Pretends to be a person. Logs in, creates a form, drags a Textbox and a Select File element onto the canvas, verifies each element's properties panel, types text, saves, and confirms it persisted after a reload.</td>
+        <td class="mono">~1 min</td>
+      </tr>
+      <tr>
+        <td><strong>Use Case 2</strong><br><span style="color:var(--muted);font-size:9pt">API · 8 tests</span></td>
+        <td>Skips the browser entirely. Authenticates, resolves a workspace folder, creates a Form file, saves its content and dependencies, creates a Process with a three-node workflow, and links the form to it.</td>
+        <td class="mono">~5 sec</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ================= 2 ================= -->
+<section class="chapter">
+  <div class="chapter__head">
+    <p class="chapter__no">Chapter 02</p>
+    <h2>Aim and objectives</h2>
+  </div>
+
+  <h3>Why bother automating a test?</h3>
+
+  <div class="plain">
+    <span class="tag">In plain words</span>
+    <p>
+      Checking a website by hand takes twenty minutes and you get bored by the
+      fourth click. Do it every day for a month and you will start skipping steps
+      without noticing.
+    </p>
+    <p style="margin-top:.5rem">
+      A written test never gets bored. It performs the same twenty minutes in one
+      minute, does every step in exactly the same order every time, and tells you
+      precisely which step broke — with a screenshot, a video, and a replay of the
+      page at the moment it failed.
+    </p>
+  </div>
+
+  <div class="technical">
+    <span class="tag">Technically</span>
+    <p>
+      The objective is a regression suite: a deterministic, repeatable
+      specification of expected behaviour that runs on every change and localises
+      a failure to a single step with a trace attached. Testing both the UI and the
+      API matters because they fail differently — a UI test catches a broken button
+      the API knows nothing about, while an API test catches a broken contract long
+      before any UI reveals it, and runs an order of magnitude faster.
+    </p>
+  </div>
+
+  <h3>The design rule the brief required</h3>
+
+  <div class="plain">
+    <span class="tag">Page Object Model, in plain words</span>
+    <p>
+      Instead of scattering "the Save button is over there" across twenty different
+      tests, each screen gets one file that knows where its buttons are. When the
+      website moves a button, you fix one line in one file — not twenty tests.
+    </p>
+  </div>
+
+  <div class="technical">
+    <span class="tag">Page Object Model, technically</span>
+    <p>
+      Locators and interactions are encapsulated per screen in <code>pages/</code>.
+      Specs express intent and contain no selectors. The API suite mirrors this with
+      a client object in <code>api/</code>, so endpoint shapes live in one place
+      rather than being repeated across tests.
+    </p>
+  </div>
+
+  <div class="note note--accent">
+    <span class="note__l">Objectives, stated plainly</span>
+    <p>
+      1. Automate the full form-building flow through the browser, with real
+      assertions at each step. 2. Automate the same domain through the API, asserting
+      status codes and response shapes. 3. Keep credentials out of the code entirely.
+      4. Make failures diagnosable by anyone, not just the author.
+    </p>
+  </div>
+</section>
+
+<!-- ================= 3 ================= -->
+<section class="chapter">
+  <div class="chapter__head">
+    <p class="chapter__no">Chapter 03</p>
+    <h2>How it is built</h2>
+  </div>
+
+  <p class="lede">Four folders, each with one job.</p>
+
+  <div class="tree">aa-automation-tests/
+├── pages/                       Page Object Model — Use Case 1
+│   ├── LoginPage.js               control room sign-in
+│   ├── AutomationPage.js          Automation menu, Create › Form
+│   └── FormBuilderPage.js         the form designer canvas
+├── api/                         API layer — Use Case 2
+│   ├── endpoints.js               every route, in one place
+│   ├── AaApiClient.js             auth + repository calls
+│   └── payloads.js                form and workflow request bodies
+├── tests/
+│   ├── useCase1.spec.js           8 UI tests, one per assignment step
+│   └── useCase2.spec.js           8 API tests, one per assignment step
+├── scripts/                     investigation tools
+│   ├── capture-auth.js            records the real login call
+│   ├── capture-repo-calls.js      records create/content/dependency calls
+│   ├── debug-panel.js             dumps properties-panel fields
+│   ├── debug-preview.js           proves the upload control is inert
+│   ├── debug-devices.js           checks whether a bot can run at all
+│   └── probe-create.js            prints raw API error responses
+├── test-data/
+├── docs/
+├── playwright.config.js
+└── .env.example</div>
+
+  <h3>What happens when a test runs</h3>
+
+  <table>
+    <thead><tr><th class="mono" style="width:8%">#</th><th>Step</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">1</td><td>Playwright reads <code>playwright.config.js</code> and starts the matching project — <code>usecase1-ui</code> or <code>usecase2-api</code>.</td></tr>
+      <tr><td class="mono">2</td><td>Credentials are loaded from <code>.env</code>, which is never committed.</td></tr>
+      <tr><td class="mono">3</td><td>For UI tests, a Chromium browser launches headless and the spec calls page objects — never raw selectors.</td></tr>
+      <tr><td class="mono">4</td><td>Each page object routes canvas locators through the designer iframe.</td></tr>
+      <tr><td class="mono">5</td><td>Assertions run. Failures capture a screenshot, a video, and a full trace.</td></tr>
+      <tr><td class="mono">6</td><td>Results are written to an HTML report opened with <code>npm run report</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note note--accent">
+    <span class="note__l">Credentials</span>
+    <p>
+      Username and password live in a <code>.env</code> file on your own machine,
+      which git is configured to ignore. They are never written into the code and
+      never reach GitHub. This was verified before publishing — no credential
+      appears anywhere in the repository's tracked content.
+    </p>
+  </div>
+</section>
+
+<!-- ================= 4 ================= -->
+<section class="chapter">
+  <div class="chapter__head">
+    <p class="chapter__no">Chapter 04</p>
+    <h2>Running it</h2>
+  </div>
+
+  <h3>On a machine that is already set up</h3>
+
+  <p class="cmd-what">Go to the project — note it is a subfolder</p>
+  <div class="cmd"><span class="p">PS&gt;</span> cd "D:\Ashutosh\Automation Anywhere\aa-automation-tests"</div>
+
+  <p class="cmd-what">Run everything — about one minute</p>
+  <div class="cmd"><span class="p">PS&gt;</span> npm test</div>
+
+  <p class="cmd-what">Only the browser tests</p>
+  <div class="cmd"><span class="p">PS&gt;</span> npm run test:usecase1</div>
+
+  <p class="cmd-what">Only the API tests — about five seconds</p>
+  <div class="cmd"><span class="p">PS&gt;</span> npm run test:usecase2</div>
+
+  <p class="cmd-what">Open the report — screenshots, video, replay</p>
+  <div class="cmd"><span class="p">PS&gt;</span> npm run report</div>
+
+  <p class="cmd-what">Visual mode — watch each step execute</p>
+  <div class="cmd"><span class="p">PS&gt;</span> npx playwright test --ui</div>
+
+  <div class="note">
+    <span class="note__l">The report shows only the last run</span>
+    <p>
+      Running just Use Case 1 and then opening the report shows 8 tests, not 16.
+      Run <code>npm test</code> first for the complete picture.
+    </p>
+  </div>
+
+  <h3>On a fresh machine</h3>
+
+  <p class="cmd-what">1 — Get the code</p>
+  <div class="cmd"><span class="p">PS&gt;</span> git clone https://github.com/arpittiwari214/aa-automation-tests.git
+<span class="p">PS&gt;</span> cd aa-automation-tests</div>
+
+  <p class="cmd-what">2 — Install libraries and the browser (let this finish completely)</p>
+  <div class="cmd"><span class="p">PS&gt;</span> npm install
+<span class="p">PS&gt;</span> npx playwright install chromium</div>
+
+  <p class="cmd-what">3 — Create the credentials file</p>
+  <div class="cmd"><span class="p">PS&gt;</span> copy .env.example .env
+<span class="p">PS&gt;</span> notepad .env</div>
+
+  <p class="cmd-what">4 — Run</p>
+  <div class="cmd"><span class="p">PS&gt;</span> npm test</div>
+
+  <div class="note">
+    <span class="note__l">Filling in .env</span>
+    <p>
+      Set <code>AA_USERNAME</code> and <code>AA_PASSWORD</code>. Leave
+      <code>AA_FORM_URL</code> <strong>empty</strong> — empty makes the suite build
+      its own form from scratch, which is what the assignment asks for. Filling it
+      in makes the tests skip the creation steps.
+    </p>
+  </div>
+
+  <div class="note">
+    <span class="note__l">One machine at a time</span>
+    <p>
+      Community Edition allows one active session per account. If two machines run
+      the suite simultaneously they evict each other's login, and the tests fail in
+      ways that look like bugs but are not.
+    </p>
+  </div>
+
+  <h3>The investigation tools</h3>
+
+  <table>
+    <thead><tr><th class="mono" style="width:38%">Script</th><th>What it answers</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">capture-auth.js</td><td>What is the real login endpoint, and what does it return?</td></tr>
+      <tr><td class="mono">capture-repo-calls.js</td><td>Which endpoints does the site use to create and save a form?</td></tr>
+      <tr><td class="mono">debug-panel.js</td><td>What are the real attributes of every field in the properties panel?</td></tr>
+      <tr><td class="mono">debug-preview.js</td><td>Is the file-upload control operable anywhere?</td></tr>
+      <tr><td class="mono">debug-devices.js</td><td>Is any device registered that could run a bot?</td></tr>
+      <tr><td class="mono">probe-create.js</td><td>What does the server actually say when a request is rejected?</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ================= 5 ================= -->
+<section class="chapter">
+  <div class="chapter__head">
+    <p class="chapter__no">Chapter 05</p>
+    <h2>The sixteen tests</h2>
+  </div>
+
+  <h4>Use Case 1 — browser · 8 tests</h4>
+  <div>
+    <div class="trow"><span>Step 1 — logs in to the control room with valid credentials</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Steps 2–4 — creates a new Form from the Automation menu</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 5 — drags the Textbox and Select File elements onto the canvas</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 6 — opens each element and verifies its properties panel</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 7a — accepts and retains text in the textbox</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 7b — uploads a document and shows the filename as confirmation</span><span class="st-skip">SKIPPED</span></div>
+    <div class="trow"><span>Step 8 — saves the form and verifies the backend accepted it</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 8b — the saved form definition survives a reload</span><span class="st-pass">PASS</span></div>
+  </div>
+
+  <h4>Use Case 2 — API · 8 tests</h4>
+  <div>
+    <div class="trow"><span>Step 1 — authenticates and captures a valid auth token</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 2 — retrieves the private workspace folder id</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 3 — creates a Form file and gets back a valid id</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 4 — saves form content with TextBox, TextArea and Number fields</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 5 — saves the form file dependencies</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 6 — creates a Process file and gets back a valid id</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 7 — saves the 3-node workflow referencing the form</span><span class="st-pass">PASS</span></div>
+    <div class="trow"><span>Step 8 — links the form as a dependency of the process</span><span class="st-pass">PASS</span></div>
+  </div>
+
+  <div class="note note--accent">
+    <span class="note__l">A note on Step 7</span>
+    <p>
+      The workflow test does not merely check a status code. It asserts the workflow
+      contains exactly three nodes in the order
+      <code>InitialStep → FormStep → exit</code>, and that both
+      <code>InitialStep</code> and <code>FormStep</code> reference the form file
+      created earlier — precisely what the brief specifies.
+    </p>
+  </div>
+</section>
+
+<!-- ================= 6 ================= -->
+<section class="chapter">
+  <div class="chapter__head">
+    <p class="chapter__no">Chapter 06</p>
+    <h2>What was actually wrong</h2>
+  </div>
+
+  <p class="lede">
+    Four problems. Every one looked like a broken test and turned out to be the
+    application behaving in a way nobody could see.
+  </p>
+
+  <div class="finding">
+    <div class="finding__h">
+      <span class="finding__n">01</span>
+      <span class="finding__t">Every button label starts with an invisible character</span>
+    </div>
+    <div class="plain">
+      <span class="tag">In plain words</span>
+      <p>
+        The buttons look like they say "Select File". They don't. Each name secretly
+        begins with a hidden icon character that a font draws as a small picture —
+        invisible on screen, but very real to code.
+      </p>
+    </div>
+    <div class="technical">
+      <span class="tag">Technically</span>
+      <p>
+        Palette and menu labels are prefixed with <code>U+F1C1</code>, a Private Use
+        Area glyph. Any pattern anchored with <code>^</code> can never match, because
+        the first character is never the letter you can see.
+      </p>
+    </div>
+    <div class="cmd">✗  /^Select File/     never matches
+✓  /Select File$/     matches</div>
+    <p>
+      Matching the end of the name instead of the start fixed the form-creation and
+      drag-and-drop steps together. It is the single most transferable lesson in
+      this project.
+    </p>
+  </div>
+
+  <div class="finding">
+    <div class="finding__h">
+      <span class="finding__n">02</span>
+      <span class="finding__t">The form designer is a page inside the page</span>
+    </div>
+    <div class="plain">
+      <span class="tag">In plain words</span>
+      <p>
+        The area where you drag elements around is not really part of the page — it
+        is a separate mini-page embedded inside it. Code looking at the outer page
+        simply cannot see anything in there.
+      </p>
+    </div>
+    <div class="technical">
+      <span class="tag">Technically</span>
+      <p>
+        The designer runs in an iframe, so a top-level
+        <code>page.locator('.file-upload-content')</code> never matches. There is a
+        second trap: the site also embeds a third-party help widget in its own
+        iframe, so selecting "the first iframe" worked only by accident of DOM order.
+      </p>
+    </div>
+    <div class="cmd">page.locator('iframe[src*="modules/attended"]').contentFrame()</div>
+    <p>Selecting the designer by its address removes the ordering dependency entirely.</p>
+  </div>
+
+  <div class="finding">
+    <div class="finding__h">
+      <span class="finding__n">03</span>
+      <span class="finding__t">Preview is a photograph, not a form</span>
+    </div>
+    <div class="plain">
+      <span class="tag">In plain words</span>
+      <p>
+        This explains a mystery that consumed hours. Clicking "browse" on the file
+        box does nothing — not for the test, and not for a real person either. It is
+        not a broken browser, not an extension, and not a bad click.
+      </p>
+    </div>
+    <div class="technical">
+      <span class="tag">Technically</span>
+      <p>
+        The builder canvas mounts no <code>&lt;input type="file"&gt;</code> and fires
+        no filechooser event. Preview does not render a live form at all: it displays
+        a static JPEG inside a modal dialog, and that image intercepts every pointer
+        event.
+      </p>
+    </div>
+    <div class="cmd">&lt;img class="form-preview__background"
+     src="/modules/attended/e5364c11e5cfa4f8066a.jpg"&gt;
+  from &lt;div role="dialog" aria-modal="true"&gt;
+  subtree intercepts pointer events</div>
+    <p>
+      The upload control is decoration in the editor. It only becomes real when a
+      bot runs the form.
+    </p>
+  </div>
+
+  <div class="finding">
+    <div class="finding__h">
+      <span class="finding__n">04</span>
+      <span class="finding__t">The API was one character away, then one folder away</span>
+    </div>
+    <div class="plain">
+      <span class="tag">In plain words</span>
+      <p>
+        The entire API half was stuck on two small things: the login address was
+        version 2 rather than version 1, and files cannot be created in the
+        top-level folder — only inside a folder within it.
+      </p>
+    </div>
+    <div class="technical">
+      <span class="tag">Technically</span>
+      <p>
+        <code>/v1/authentication</code> returns 404; Community Edition serves
+        <code>/v2/authentication</code>. Creating in the workspace root returns
+        <code>400 repository.exception.root.folder</code>.
+      </p>
+    </div>
+    <div class="note">
+      <span class="note__l">Why guessing was worse than useless</span>
+      <p>
+        The gateway answers <strong>401</strong> for any address that does not exist,
+        including deliberately nonsense ones. A 401 therefore proves nothing about
+        whether a route is real, so endpoints were recorded from the site's own
+        network traffic instead — which is exactly what the assignment meant by
+        "identify endpoints using the Network tab".
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 7 ================= -->
+<section class="chapter">
+  <div class="chapter__head">
+    <p class="chapter__no">Chapter 07</p>
+    <h2>The skipped test</h2>
+  </div>
+
+  <p class="lede">
+    Fifteen tests pass. One — Step 7b, uploads a document — is marked skipped, with
+    its reason printed in the report.
+  </p>
+
+  <div class="plain">
+    <span class="tag">Why not just make it green?</span>
+    <p>
+      It would have been easy. Assert something weak that happens to be true, and
+      the report shows sixteen ticks. But a green tick there would claim an upload
+      was verified when no upload happened. That is worse than having no test at
+      all, because it hides the gap instead of showing it.
+    </p>
+  </div>
+
+  <div class="technical">
+    <span class="tag">Technically</span>
+    <p>
+      A hollow assertion satisfies the runner while misrepresenting coverage. An
+      explicit <code>test.skip()</code> carrying its cause keeps the limitation
+      legible in the report rather than laundering it into a pass.
+    </p>
+  </div>
+
+  <h3>Can it be closed?</h3>
+
+  <p>
+    Only by running the form for real, which requires the Automation Anywhere
+    <strong>Bot Agent</strong> — a separate Windows application — installed and
+    registered as a device. This account has zero devices registered, so no form can
+    execute at all:
+  </p>
+
+  <div class="cmd"><span class="p">PS&gt;</span> node scripts/debug-devices.js
+auth: 200
+POST /v2/userdevices -&gt; 200
+
+devices registered: 0</div>
+
+  <p>
+    And even with the agent installed, an attended form opens in the Bot Agent's own
+    desktop window rather than a browser page — so Playwright still could not drive
+    it. The result would be a manual demonstration, not a test. That is why it
+    remains a documented skip.
+  </p>
+</section>
+
+<!-- ================= 8 ================= -->
+<section class="chapter">
+  <div class="chapter__head">
+    <p class="chapter__no">Chapter 08</p>
+    <h2>API reference</h2>
+  </div>
+
+  <p class="lede">
+    Every endpoint below was captured from the Control Room's own traffic, not
+    guessed.
+  </p>
+
+  <table>
+    <thead><tr><th style="width:30%">Purpose</th><th>Route and body</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Authenticate</strong></td>
+        <td class="mono">POST /v2/authentication<br>body: { username, password, captcha }<br>→ { token, user, permissions, tenantUuid, ttlSeconds }</td>
+      </tr>
+      <tr>
+        <td><strong>List workspace</strong></td>
+        <td class="mono">POST /v2/repository/workspaces/private/files/list<br>body: { page, sort }</td>
+      </tr>
+      <tr>
+        <td><strong>List a folder</strong></td>
+        <td class="mono">POST /v2/repository/folders/{folderId}/list</td>
+      </tr>
+      <tr>
+        <td><strong>Create a file</strong></td>
+        <td class="mono">POST /v2/repository/files<br>body: { name, parentFolderId, description, contentType }</td>
+      </tr>
+      <tr>
+        <td><strong>Save content</strong></td>
+        <td class="mono">PUT /v2/repository/files/{id}/content?hasErrors=false<br>body: { form }</td>
+      </tr>
+      <tr>
+        <td><strong>Save dependencies</strong></td>
+        <td class="mono">PUT /v2/repository/files/{id}/dependencies<br>body: { childFileIds }</td>
+      </tr>
+      <tr>
+        <td><strong>List devices</strong></td>
+        <td class="mono">POST /v2/userdevices</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <span class="note__l">Three details that cost real time</span>
+    <p>
+      The destination folder travels in the <em>body</em> as
+      <code>parentFolderId</code>, not in the URL path. Both save calls are
+      <strong>PUT</strong>, not POST. And the authentication header is
+      <code>X-Authorization</code>, not a bearer token.
+    </p>
+  </div>
+
+  <h3>Content types</h3>
+  <table>
+    <thead><tr><th style="width:30%">File type</th><th class="mono">contentType</th></tr></thead>
+    <tbody>
+      <tr><td>Form</td><td class="mono">application/vnd.aa.form</td></tr>
+      <tr><td>Process / workflow</td><td class="mono">application/vnd.aa.workflow</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ================= 9 ================= -->
+<section class="chapter">
+  <div class="chapter__head">
+    <p class="chapter__no">Chapter 09</p>
+    <h2>Troubleshooting</h2>
+  </div>
+
+  <p class="lede">Every error actually encountered while building this, and its fix.</p>
+
+  <h3>"Could not read package.json"</h3>
+  <p>You are one folder too high. The project lives in a subfolder.</p>
+  <div class="cmd"><span class="p">PS&gt;</span> cd "D:\Ashutosh\Automation Anywhere\aa-automation-tests"</div>
+  <p>Your prompt should end in <code>\aa-automation-tests&gt;</code> before running npm. A new terminal starts in the wrong place again.</p>
+
+  <h3>"Executable doesn't exist at …chrome.exe"</h3>
+  <p>
+    Run it again — this is intermittent. The file is genuinely present; Playwright's
+    existence check fails while Windows Defender holds a lock on the 220&nbsp;MB
+    binary during a scan. If it persists, repair the install:
+  </p>
+  <div class="cmd"><span class="p">PS&gt;</span> npx playwright install chromium</div>
+  <p>
+    Excluding <code>C:\Users\PC\AppData\Local\ms-playwright</code> from Defender's
+    real-time scanning stops it permanently — but that is a security setting, so
+    decide for yourself whether you want it.
+  </p>
+
+  <h3>Login fails and the screenshot is blank</h3>
+  <p>
+    The site failed to load. This occurred once after logging in roughly ten times
+    in quick succession during debugging, and cleared on its own. Wait a minute and
+    run again. Also confirm the other machine is not running the suite at the same
+    time.
+  </p>
+
+  <h3>"spawn UNKNOWN" when using HEADED=1</h3>
+  <p>
+    Expected on this laptop — headed Chrome fails with a Windows side-by-side
+    configuration error, unrelated to the tests. Use visual mode instead:
+  </p>
+  <div class="cmd"><span class="p">PS&gt;</span> npx playwright test --ui</div>
+
+  <h3>Tests fail on "Missing credentials"</h3>
+  <p><code>.env</code> still holds placeholder text, or does not exist yet.</p>
+  <div class="cmd"><span class="p">PS&gt;</span> copy .env.example .env
+<span class="p">PS&gt;</span> notepad .env</div>
+
+  <h3>The report shows 8 tests instead of 16</h3>
+  <p>The report shows whatever ran last. Run the whole suite, then open it.</p>
+  <div class="cmd"><span class="p">PS&gt;</span> npm test
+<span class="p">PS&gt;</span> npm run report</div>
+</section>
+
+<!-- ================= 10 ================= -->
+<section class="chapter">
+  <div class="chapter__head">
+    <p class="chapter__no">Chapter 10</p>
+    <h2>Assignment audit</h2>
+  </div>
+
+  <p class="lede">Checked against the assignment document, item by item.</p>
+
+  <h4>General instructions</h4>
+  <table>
+    <tbody>
+      <tr><td>Framework: Playwright or Cypress</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Page Object Model for UI automation</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Assert UI element visibility and interaction</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Assert functional flow and expected behaviours</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Assert API responses and functional correctness</td><td class="yes" style="text-align:right">DONE</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Use Case 1 — expectations</h4>
+  <table>
+    <tbody>
+      <tr><td>Build and automate a form with Text Box and File Upload</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Assert UI element visibility and functionality</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Assert file upload status and confirmation</td><td class="no" style="text-align:right">BLOCKED</td></tr>
+      <tr><td>Assert form submission behaviour and backend response</td><td class="yes" style="text-align:right">DONE</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Use Case 2 — expectations</h4>
+  <table>
+    <tbody>
+      <tr><td>Identify required endpoints from the Network tab</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Assert status codes 200 / 201 at every step</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Form creation response contains a valid id</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Form content save response is successful</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Form dependencies save response is successful</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Process creation response contains a valid id</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Process content save response is successful</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Process dependencies save response is successful</td><td class="yes" style="text-align:right">DONE</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Submission guidelines</h4>
+  <table>
+    <tbody>
+      <tr><td>Code submitted in a GitHub repository</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>README with setup and execution instructions</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>README lists framework and tools used</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>README covers environment and configuration notes</td><td class="yes" style="text-align:right">DONE</td></tr>
+      <tr><td>Descriptive test names, organised by use case</td><td class="yes" style="text-align:right">DONE</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <span class="note__l">The single blocked item</span>
+    <p>
+      <em>File upload status and confirmation</em> is the only requirement not met,
+      and it is blocked by the application rather than by the tests. Twenty of
+      twenty-one line items are implemented and passing. See Chapter 07.
+    </p>
+  </div>
+</section>
+
+<!-- ================= 11 ================= -->
+<section class="chapter">
+  <div class="chapter__head">
+    <p class="chapter__no">Chapter 11</p>
+    <h2>Glossary</h2>
+  </div>
+
+  <dl class="glossary">
+    <dt>RPA — Robotic Process Automation</dt>
+    <dd>Software that performs repetitive computer work a person would otherwise do by hand.</dd>
+
+    <dt>Playwright</dt>
+    <dd>A tool that drives a real browser from code — clicking, typing and checking, exactly as a person would.</dd>
+
+    <dt>Page Object Model (POM)</dt>
+    <dd>A way of organising test code so each screen has one file describing where its controls are, keeping tests readable and fixes local.</dd>
+
+    <dt>Assertion</dt>
+    <dd>The line that decides pass or fail. "I expect this box to now contain the text I typed."</dd>
+
+    <dt>Locator</dt>
+    <dd>The instruction that finds a specific element on screen — by its label, role, or a class name in the page's code.</dd>
+
+    <dt>Selector strictness</dt>
+    <dd>Playwright refuses to act if a locator matches more than one element, rather than guessing. Several fixes here came from resolving those collisions.</dd>
+
+    <dt>iframe</dt>
+    <dd>A complete web page embedded inside another one. Code must step into it deliberately; it cannot see in from outside.</dd>
+
+    <dt>API</dt>
+    <dd>The server's own interface, without a browser. Faster and more stable to test, but it cannot catch a visually broken page.</dd>
+
+    <dt>Endpoint</dt>
+    <dd>One specific address on the server that performs one job, such as "log this user in" or "create a file".</dd>
+
+    <dt>Token</dt>
+    <dd>A temporary pass issued after logging in, attached to every later request to prove who you are.</dd>
+
+    <dt>Headless</dt>
+    <dd>Running a browser with no visible window. Faster, and the default here because visible Chrome is broken on this machine.</dd>
+
+    <dt>Trace</dt>
+    <dd>A recording of everything the browser did during a test, replayable step by step with a snapshot of the page at each moment.</dd>
+
+    <dt>Bot Agent</dt>
+    <dd>Automation Anywhere's desktop application that actually runs automations. Without it registered as a device, no form or bot can execute.</dd>
+  </dl>
+</section>
+
+</body>
+</html>
